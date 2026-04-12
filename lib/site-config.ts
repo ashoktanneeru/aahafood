@@ -19,7 +19,8 @@ export const siteConfig = {
   description:
     "AahaFoods brings premium homemade Indian pickles, spice powders, snacks, and pantry staples to your doorstep with a warm handcrafted touch.",
   url: resolveSiteUrl(),
-  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "919999999999",
+  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "917760776000",
+  phoneDisplay: "+91 7760776000",
   razorpayLink:
     process.env.NEXT_PUBLIC_RAZORPAY_LINK ?? "https://rzp.io/l/aahafoods-demo",
   get whatsappLink() {

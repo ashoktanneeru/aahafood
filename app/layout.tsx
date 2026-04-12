@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Comfortaa } from "next/font/google";
 
 import { CartProvider } from "@/components/cart-provider";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
@@ -8,6 +9,12 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { siteConfig } from "@/lib/site-config";
 
 import "./globals.css";
+
+const comfortaa = Comfortaa({
+  subsets: ["latin"],
+  variable: "--font-comfortaa",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -58,7 +65,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className={comfortaa.variable}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <CartProvider>
             <div className="relative min-h-screen overflow-x-hidden">

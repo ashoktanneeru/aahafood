@@ -36,7 +36,7 @@ Open `http://localhost:3000`.
 Create `.env.local` if you want to customize checkout integrations:
 
 ```env
-NEXT_PUBLIC_WHATSAPP_NUMBER=919999999999
+NEXT_PUBLIC_WHATSAPP_NUMBER=917760776000
 NEXT_PUBLIC_RAZORPAY_LINK=https://rzp.io/l/your-payment-link
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key

@@ -34,18 +34,18 @@ export function HeroSection() {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="relative z-10 flex flex-col justify-center px-6 py-16 sm:px-10 lg:px-16"
+            className="relative z-10 flex flex-col justify-center px-6 py-14 sm:px-10 lg:px-16 lg:py-16"
           >
             <motion.div
               variants={fadeInUp}
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-brand-yellow"
+              className="inline-flex w-fit items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-brand-yellow"
             >
               <Sparkles className="h-4 w-4" />
               Small Batch Pantry
             </motion.div>
             <motion.h1
               variants={fadeInUp}
-              className="mt-6 max-w-3xl font-heading text-5xl leading-tight text-white sm:text-6xl lg:text-7xl"
+              className="mt-6 max-w-3xl font-heading text-4xl font-semibold leading-[1.08] text-white sm:text-5xl lg:text-6xl"
             >
               Authentic Homemade Flavors, Delivered with Love{" "}
               <span className="text-brand-yellow">❤️</span>
@@ -57,6 +57,12 @@ export function HeroSection() {
               Pickles matured with patience, spice powders ground fresh, and
               traditional recipes prepared with the richness of an Indian home
               kitchen.
+            </motion.p>
+            <motion.p
+              variants={fadeInUp}
+              className="mt-4 text-sm font-semibold tracking-[0.08em] text-white/88"
+            >
+              Orders and WhatsApp support: {siteConfig.phoneDisplay}
             </motion.p>
             <motion.div variants={fadeInUp} className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link

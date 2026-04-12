@@ -21,8 +21,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ["var(--font-playfair)", "serif"],
-        body: ["var(--font-inter)", "sans-serif"],
+        heading: ["var(--font-comfortaa)", "sans-serif"],
+        body: ["var(--font-comfortaa)", "sans-serif"],
       },
       boxShadow: {
         soft: "0 18px 50px rgba(77, 39, 10, 0.10)",
