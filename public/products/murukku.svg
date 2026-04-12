@@ -1,0 +1,8 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="900" rx="48" fill="#FFF7E2"/>
+<circle cx="431" cy="453" r="240" fill="#E6A817"/>
+<path d="M287 454C287 375.575 350.575 312 429 312C507.425 312 571 375.575 571 454C571 532.425 507.425 596 429 596C350.575 596 287 532.425 287 454Z" stroke="#FFF1D5" stroke-width="46"/>
+<path d="M355 453C355 412.131 388.131 379 429 379C469.869 379 503 412.131 503 453C503 493.869 469.869 527 429 527C388.131 527 355 493.869 355 453Z" stroke="#FFF1D5" stroke-width="34"/>
+<text x="769" y="357" fill="#8B0000" font-family="Georgia, serif" font-size="68" font-weight="700">Murukku</text>
+<text x="769" y="434" fill="#8B0000" font-family="Arial, sans-serif" font-size="42">Butter bites</text>
+</svg>

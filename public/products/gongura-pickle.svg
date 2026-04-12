@@ -1,0 +1,12 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="900" rx="48" fill="#EFE5C7"/>
+<rect x="219" y="141" width="507" height="612" rx="60" fill="#2E7D32"/>
+<rect x="262" y="214" width="420" height="452" rx="38" fill="#FFF8E7"/>
+<circle cx="474" cy="443" r="144" fill="#6B8E23"/>
+<circle cx="435" cy="395" r="48" fill="#E6A817"/>
+<circle cx="543" cy="480" r="44" fill="#E6A817"/>
+<circle cx="566" cy="384" r="36" fill="#E6A817"/>
+<rect x="333" y="163" width="281" height="76" rx="30" fill="#8B0000"/>
+<text x="790" y="359" fill="#2E7D32" font-family="Georgia, serif" font-size="66" font-weight="700">Gongura</text>
+<text x="790" y="434" fill="#2E7D32" font-family="Arial, sans-serif" font-size="42">Garlic pickle</text>
+</svg>
