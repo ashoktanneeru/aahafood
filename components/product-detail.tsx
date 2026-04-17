@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useCart } from "@/components/cart-provider";
 import { products } from "@/data/products";
@@ -12,7 +12,13 @@ import { formatCurrency } from "@/lib/utils";
 
 export function ProductDetail({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const gallery = product.images?.length ? product.images : [product.image];
   const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(gallery[0]);
+
+  useEffect(() => {
+    setSelectedImage(gallery[0]);
+  }, [gallery, product.id]);
 
   const related = products
     .filter((item) => item.categorySlug === product.categorySlug && item.id !== product.id)
@@ -21,14 +27,45 @@ export function ProductDetail({ product }: { product: Product }) {
   return (
     <div className="space-y-16">
       <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative aspect-[5/4] overflow-hidden rounded-[2.5rem] border border-brand-red/10 shadow-soft">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            sizes="(max-width: 1024px) 100vw, 55vw"
-            className="object-cover"
-          />
+        <div className="space-y-5">
+          <div className="relative aspect-[5/4] overflow-hidden rounded-[2.5rem] border border-brand-red/10 shadow-soft">
+            <Image
+              src={selectedImage}
+              alt={product.name}
+              fill
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-cover"
+            />
+          </div>
+          {gallery.length > 1 ? (
+            <div className="grid grid-cols-2 gap-4 sm:max-w-md">
+              {gallery.map((image, index) => {
+                const isActive = image === selectedImage;
+
+                return (
+                  <button
+                    key={image}
+                    type="button"
+                    onClick={() => setSelectedImage(image)}
+                    className={`relative aspect-[4/3] overflow-hidden rounded-[1.5rem] border transition ${
+                      isActive
+                        ? "border-brand-green shadow-soft ring-2 ring-brand-green/20"
+                        : "border-brand-red/10 hover:border-brand-green/30"
+                    }`}
+                    aria-label={`View ${product.name} image ${index + 1}`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`${product.name} preview ${index + 1}`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 240px"
+                      className="object-cover"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-col justify-center">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-red/60">
