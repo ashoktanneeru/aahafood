@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
@@ -26,7 +27,7 @@ export function HeroSection() {
   return (
     <section className="section-shell relative pt-8 sm:pt-10">
       <div className="relative overflow-hidden rounded-[2.5rem] border border-brand-red/10 bg-brand-red shadow-float">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(230,168,23,0.30),transparent_35%),linear-gradient(90deg,rgba(20,8,6,0.42),rgba(20,8,6,0.55))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(201,226,26,0.30),transparent_35%),linear-gradient(90deg,rgba(20,24,21,0.45),rgba(20,24,21,0.64))]" />
         <div className="absolute inset-0 bg-heritage-grid bg-[size:28px_28px] opacity-20" />
 
         <div className="grid min-h-[82vh] lg:grid-cols-[1.05fr_0.95fr]">
@@ -42,6 +43,17 @@ export function HeroSection() {
             >
               <Sparkles className="h-4 w-4" />
               Small Batch Pantry
+            </motion.div>
+            <motion.div variants={fadeInUp} className="mt-5">
+              <div className="inline-flex rounded-xl bg-white/96 px-3 py-2 shadow-soft">
+                <Image
+                  src="/brand/logo-full-color.png"
+                  alt="AahaFoods"
+                  width={796}
+                  height={241}
+                  className="h-10 w-auto sm:h-12"
+                />
+              </div>
             </motion.div>
             <motion.h1
               variants={fadeInUp}

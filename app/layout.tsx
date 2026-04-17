@@ -40,9 +40,9 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: "/og-image.svg",
-        width: 1200,
-        height: 630,
+        url: "/brand/logo-full-color.png",
+        width: 796,
+        height: 241,
         alt: siteConfig.name,
       },
     ],
@@ -51,10 +51,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: ["/og-image.svg"],
+    images: ["/brand/logo-full-color.png"],
   },
   alternates: {
     canonical: siteConfig.url,
+  },
+  icons: {
+    icon: "/brand/icon.png",
+    apple: "/brand/icon.png",
   },
 };
 

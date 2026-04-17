@@ -12,12 +12,12 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          cream: "#FFF8E7",
-          red: "#8B0000",
-          yellow: "#E6A817",
-          green: "#2E7D32",
-          ink: "#2B1E1A",
-          sand: "#F5E7C8",
+          cream: "#F6F8F0",
+          red: "#2F7D32",
+          yellow: "#C9E21A",
+          green: "#4E4C4D",
+          ink: "#2F3330",
+          sand: "#E7F0CB",
         },
       },
       fontFamily: {
@@ -25,12 +25,12 @@ const config: Config = {
         body: ["var(--font-comfortaa)", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 18px 50px rgba(77, 39, 10, 0.10)",
-        float: "0 20px 70px rgba(139, 0, 0, 0.18)",
+        soft: "0 18px 50px rgba(47, 51, 48, 0.10)",
+        float: "0 20px 70px rgba(47, 125, 50, 0.16)",
       },
       backgroundImage: {
         "heritage-grid":
-          "linear-gradient(rgba(139,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(139,0,0,0.04) 1px, transparent 1px)",
+          "linear-gradient(rgba(47,125,50,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(47,125,50,0.05) 1px, transparent 1px)",
       },
     },
   },

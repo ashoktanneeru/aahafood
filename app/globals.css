@@ -19,21 +19,21 @@ body {
   @apply bg-brand-cream font-body text-brand-ink antialiased;
   font-feature-settings: "liga" 1, "kern" 1;
   background-image:
-    radial-gradient(circle at top, rgba(230, 168, 23, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(139, 0, 0, 0.05), transparent 35%),
-    linear-gradient(0deg, rgba(255, 248, 231, 1), rgba(255, 248, 231, 1));
+    radial-gradient(circle at top, rgba(201, 226, 26, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(47, 125, 50, 0.09), transparent 35%),
+    linear-gradient(0deg, rgba(246, 248, 240, 1), rgba(246, 248, 240, 1));
 }
 
 .dark body {
   @apply bg-stone-950 text-stone-100;
   background-image:
-    radial-gradient(circle at top, rgba(230, 168, 23, 0.10), transparent 34%),
-    linear-gradient(135deg, rgba(139, 0, 0, 0.14), transparent 35%),
-    linear-gradient(0deg, rgba(12, 10, 9, 1), rgba(12, 10, 9, 1));
+    radial-gradient(circle at top, rgba(201, 226, 26, 0.10), transparent 34%),
+    linear-gradient(135deg, rgba(47, 125, 50, 0.16), transparent 35%),
+    linear-gradient(0deg, rgba(20, 24, 21, 1), rgba(20, 24, 21, 1));
 }
 
 ::selection {
-  background: rgba(230, 168, 23, 0.35);
+  background: rgba(201, 226, 26, 0.35);
 }
 
 .section-shell {
