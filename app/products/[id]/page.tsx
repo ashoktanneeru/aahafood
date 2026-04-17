@@ -1,19 +1,17 @@
 import { notFound } from "next/navigation";
 
 import { ProductDetail } from "@/components/product-detail";
-import { products } from "@/data/products";
+import { getStoreProductById, getStoreProducts } from "@/lib/catalog";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
-export async function generateStaticParams() {
-  return products.map((product) => ({ id: product.id }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const product = products.find((item) => item.id === id);
+  const product = await getStoreProductById(id);
 
   if (!product) {
     return {};
@@ -30,15 +28,19 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
-  const product = products.find((item) => item.id === id);
+  const [product, products] = await Promise.all([getStoreProductById(id), getStoreProducts()]);
 
   if (!product) {
     notFound();
   }
 
+  const relatedProducts = products
+    .filter((item) => item.categorySlug === product.categorySlug && item.id !== product.id)
+    .slice(0, 3);
+
   return (
     <section className="section-shell py-24">
-      <ProductDetail product={product} />
+      <ProductDetail product={product} relatedProducts={relatedProducts} />
     </section>
   );
 }

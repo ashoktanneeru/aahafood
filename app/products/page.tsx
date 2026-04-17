@@ -1,17 +1,19 @@
 import { ProductCatalog } from "@/components/product-catalog";
-import { products } from "@/data/products";
+import { getStoreProducts } from "@/lib/catalog";
 
 export const metadata = {
   title: "Products",
   description: "Browse premium homemade pickles, spices, snacks, whole spices, and fox nuts.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductsPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const params = await searchParams;
+  const [params, products] = await Promise.all([searchParams, getStoreProducts()]);
 
   return (
     <section className="section-shell py-24">

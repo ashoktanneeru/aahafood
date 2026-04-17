@@ -1,8 +1,10 @@
-import { products } from "@/data/products";
 import { ProductCard } from "@/components/product-card";
 import { SectionHeading } from "@/components/section-heading";
+import { getFeaturedProducts } from "@/lib/catalog";
 
-export function FeaturedProducts() {
+export async function FeaturedProducts() {
+  const products = await getFeaturedProducts();
+
   return (
     <section className="section-shell py-24">
       <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">

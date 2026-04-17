@@ -6,11 +6,16 @@ import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useCart } from "@/components/cart-provider";
-import { products } from "@/data/products";
 import { Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-export function ProductDetail({ product }: { product: Product }) {
+export function ProductDetail({
+  product,
+  relatedProducts,
+}: {
+  product: Product;
+  relatedProducts: Product[];
+}) {
   const { addItem } = useCart();
   const gallery = product.images?.length ? product.images : [product.image];
   const [quantity, setQuantity] = useState(1);
@@ -19,10 +24,6 @@ export function ProductDetail({ product }: { product: Product }) {
   useEffect(() => {
     setSelectedImage(gallery[0]);
   }, [gallery, product.id]);
-
-  const related = products
-    .filter((item) => item.categorySlug === product.categorySlug && item.id !== product.id)
-    .slice(0, 3);
 
   return (
     <div className="space-y-16">
@@ -123,11 +124,11 @@ export function ProductDetail({ product }: { product: Product }) {
         </div>
       </div>
 
-      {related.length > 0 ? (
+      {relatedProducts.length > 0 ? (
         <div>
           <h2 className="font-heading text-3xl text-brand-ink">You may also like</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {related.map((item) => (
+            {relatedProducts.map((item) => (
               <Link
                 key={item.id}
                 href={`/products/${item.id}`}

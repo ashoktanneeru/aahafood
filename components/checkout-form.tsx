@@ -53,6 +53,7 @@ export function CheckoutForm() {
         ...form,
         items,
         totalPrice: subtotal,
+        paymentMode: mode,
       });
 
       const message = [

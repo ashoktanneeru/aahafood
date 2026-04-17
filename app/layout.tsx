@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Comfortaa } from "next/font/google";
 
+import { AppShell } from "@/components/app-shell";
 import { CartProvider } from "@/components/cart-provider";
-import { FloatingWhatsApp } from "@/components/floating-whatsapp";
-import { Navbar } from "@/components/navbar";
-import { SiteFooter } from "@/components/site-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { siteConfig } from "@/lib/site-config";
 
@@ -72,12 +70,7 @@ export default function RootLayout({
       <body className={comfortaa.variable}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <CartProvider>
-            <div className="relative min-h-screen overflow-x-hidden">
-              <Navbar />
-              <main className="pt-24 sm:pt-28">{children}</main>
-              <SiteFooter />
-              <FloatingWhatsApp />
-            </div>
+            <AppShell>{children}</AppShell>
           </CartProvider>
         </ThemeProvider>
       </body>

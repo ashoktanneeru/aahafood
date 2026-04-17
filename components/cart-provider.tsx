@@ -18,6 +18,32 @@ type CartContextValue = {
 const STORAGE_KEY = "aahafoods-cart";
 const CartContext = createContext<CartContextValue | null>(null);
 
+function isLegacyCartEntry(value: unknown): value is { id: string; quantity: number } {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "id" in value &&
+      "quantity" in value &&
+      typeof (value as { id: unknown }).id === "string" &&
+      typeof (value as { quantity: unknown }).quantity === "number",
+  );
+}
+
+function isStoredCartItem(value: unknown): value is CartItem {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "id" in value &&
+      "name" in value &&
+      "price" in value &&
+      "quantity" in value &&
+      typeof (value as { id: unknown }).id === "string" &&
+      typeof (value as { name: unknown }).name === "string" &&
+      typeof (value as { price: unknown }).price === "number" &&
+      typeof (value as { quantity: unknown }).quantity === "number",
+  );
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
@@ -28,22 +54,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const parsed: Array<{ id: string; quantity: number }> = JSON.parse(saved);
-      const hydrated = parsed
-        .map(({ id, quantity }) => {
-          const product = products.find((item) => item.id === id);
-          return product ? { ...product, quantity } : null;
-        })
-        .filter(Boolean) as CartItem[];
-      setItems(hydrated);
+      const parsed = JSON.parse(saved);
+
+      if (!Array.isArray(parsed)) {
+        throw new Error("Invalid cart payload");
+      }
+
+      if (parsed.every(isStoredCartItem)) {
+        setItems(parsed);
+        return;
+      }
+
+      if (parsed.every(isLegacyCartEntry)) {
+        const hydrated = parsed
+          .map(({ id, quantity }) => {
+            const product = products.find((item) => item.id === id);
+            return product ? { ...product, quantity } : null;
+          })
+          .filter(Boolean) as CartItem[];
+        setItems(hydrated);
+        return;
+      }
+
+      throw new Error("Unsupported cart format");
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
   useEffect(() => {
-    const serialized = items.map(({ id, quantity }) => ({ id, quantity }));
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
   const value = useMemo<CartContextValue>(() => {

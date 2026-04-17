@@ -5,6 +5,8 @@ import { HomeCta } from "@/components/home-cta";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { WhyChooseUs } from "@/components/why-choose-us";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   return (
     <>
