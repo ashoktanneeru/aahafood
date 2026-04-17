@@ -74,7 +74,7 @@ export default function RootLayout({
           <CartProvider>
             <div className="relative min-h-screen overflow-x-hidden">
               <Navbar />
-              <main>{children}</main>
+              <main className="pt-24 sm:pt-28">{children}</main>
               <SiteFooter />
               <FloatingWhatsApp />
             </div>

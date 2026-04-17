@@ -25,7 +25,7 @@ const videos = [
 
 export function HeroSection() {
   return (
-    <section className="section-shell relative pt-8 sm:pt-10">
+    <section className="section-shell relative pt-4 sm:pt-6">
       <div className="relative overflow-hidden rounded-[2.5rem] border border-brand-red/10 bg-brand-red shadow-float">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(201,226,26,0.30),transparent_35%),linear-gradient(90deg,rgba(20,24,21,0.45),rgba(20,24,21,0.64))]" />
         <div className="absolute inset-0 bg-heritage-grid bg-[size:28px_28px] opacity-20" />
@@ -45,15 +45,13 @@ export function HeroSection() {
               Small Batch Pantry
             </motion.div>
             <motion.div variants={fadeInUp} className="mt-5">
-              <div className="inline-flex rounded-xl bg-white/96 px-3 py-2 shadow-soft">
-                <Image
-                  src="/brand/logo-full-color.png"
-                  alt="AahaFoods"
-                  width={796}
-                  height={241}
-                  className="h-10 w-auto sm:h-12"
-                />
-              </div>
+              <Image
+                src="/brand/logo-full-color.png"
+                alt="AahaFoods"
+                width={796}
+                height={241}
+                className="h-10 w-auto sm:h-12"
+              />
             </motion.div>
             <motion.h1
               variants={fadeInUp}
@@ -64,7 +62,7 @@ export function HeroSection() {
             </motion.h1>
             <motion.p
               variants={fadeInUp}
-              className="mt-6 max-w-2xl text-base leading-8 text-white/78 sm:text-lg"
+              className="mt-6 max-w-2xl text-base leading-8 text-white sm:text-lg"
             >
               Pickles matured with patience, spice powders ground fresh, and
               traditional recipes prepared with the richness of an Indian home
@@ -72,7 +70,7 @@ export function HeroSection() {
             </motion.p>
             <motion.p
               variants={fadeInUp}
-              className="mt-4 text-sm font-semibold tracking-[0.08em] text-white/88"
+              className="mt-4 text-sm font-semibold tracking-[0.08em] text-white"
             >
               Orders and WhatsApp support: {siteConfig.phoneDisplay}
             </motion.p>

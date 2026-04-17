@@ -23,19 +23,17 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-brand-red/10 bg-brand-cream/75 backdrop-blur-xl dark:border-white/10 dark:bg-stone-950/70">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-brand-red/10 bg-brand-cream/82 backdrop-blur-xl dark:border-white/10 dark:bg-stone-950/78">
       <div className="section-shell flex h-20 items-center justify-between gap-4">
         <Link href="/" className="flex min-w-0 items-center gap-3">
-          <div className="rounded-xl bg-white/90 px-3 py-2 shadow-soft dark:bg-white/95">
-            <Image
-              src="/brand/logo-full-color.png"
-              alt="AahaFoods"
-              width={796}
-              height={241}
-              priority
-              className="h-8 w-auto max-w-[170px] sm:h-10 sm:max-w-none"
-            />
-          </div>
+          <Image
+            src="/brand/logo-full-color.png"
+            alt="AahaFoods"
+            width={796}
+            height={241}
+            priority
+            className="h-8 w-auto max-w-[170px] sm:h-10 sm:max-w-none"
+          />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
