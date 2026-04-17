@@ -34,13 +34,13 @@ export function ProductDetail({ product }: { product: Product }) {
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-red/60">
             {product.category}
           </p>
-          <h1 className="mt-4 font-heading text-4xl text-brand-red sm:text-5xl">
+          <h1 className="mt-4 max-w-xl font-heading text-4xl leading-tight text-brand-ink sm:text-5xl">
             {product.name}
           </h1>
           <p className="mt-5 text-base leading-8 text-brand-ink/75 dark:text-stone-300/85">
             {product.description}
           </p>
-          <p className="mt-6 text-3xl font-semibold text-brand-green">
+          <p className="mt-6 text-3xl font-semibold text-brand-red">
             {formatCurrency(product.price)}
           </p>
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -88,19 +88,21 @@ export function ProductDetail({ product }: { product: Product }) {
 
       {related.length > 0 ? (
         <div>
-          <h2 className="font-heading text-3xl text-brand-red">You may also like</h2>
+          <h2 className="font-heading text-3xl text-brand-ink">You may also like</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {related.map((item) => (
               <Link
                 key={item.id}
                 href={`/products/${item.id}`}
-                className="rounded-[2rem] border border-brand-red/10 bg-white/80 p-4 shadow-soft dark:bg-white/5"
+                className="flex h-full flex-col rounded-[2rem] border border-brand-red/10 bg-white/80 p-4 shadow-soft dark:bg-white/5"
               >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem]">
                   <Image src={item.image} alt={item.name} fill className="object-cover" />
                 </div>
-                <h3 className="mt-4 font-heading text-2xl text-brand-red">{item.name}</h3>
-                <p className="mt-2 text-sm text-brand-green">{formatCurrency(item.price)}</p>
+                <h3 className="mt-4 min-h-[3.5rem] font-heading text-2xl leading-tight text-brand-ink">
+                  {item.name}
+                </h3>
+                <p className="mt-2 text-sm text-brand-red">{formatCurrency(item.price)}</p>
               </Link>
             ))}
           </div>

@@ -18,7 +18,7 @@ export function CategoriesSection() {
             <Link
               key={category.slug}
               href={`/products?category=${category.slug}`}
-              className="group rounded-[2rem] border border-brand-red/10 bg-white/80 p-6 shadow-soft transition hover:-translate-y-1 hover:border-brand-yellow/40 dark:bg-white/5"
+              className="group flex h-full flex-col rounded-[2rem] border border-brand-red/10 bg-white/80 p-6 shadow-soft transition hover:-translate-y-1 hover:border-brand-yellow/40 dark:bg-white/5"
             >
               <div
                 className="mb-6 h-36 rounded-[1.5rem]"
@@ -29,8 +29,10 @@ export function CategoriesSection() {
               </p>
               <div className="mt-4 flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="font-heading text-2xl text-brand-red">{category.label}</h3>
-                  <p className="mt-2 text-sm leading-6 text-brand-ink/70 dark:text-stone-300/80">
+                  <h3 className="font-heading text-2xl leading-tight text-brand-ink">
+                    {category.label}
+                  </h3>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-brand-ink/70 dark:text-stone-300/80">
                     {category.description}
                   </p>
                 </div>

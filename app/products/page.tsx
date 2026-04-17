@@ -19,7 +19,7 @@ export default async function ProductsPage({
         <span className="inline-flex rounded-full border border-brand-red/15 bg-brand-red/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-brand-red">
           Our Collection
         </span>
-        <h1 className="mt-5 font-heading text-4xl text-brand-red sm:text-5xl">
+        <h1 className="mt-5 max-w-2xl font-heading text-4xl leading-tight text-brand-ink sm:text-5xl">
           Crafted in small batches, packed with home-kitchen warmth.
         </h1>
         <p className="mt-4 text-base leading-7 text-brand-ink/70 dark:text-stone-300/80">

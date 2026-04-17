@@ -38,7 +38,9 @@ export function WhyChooseUs() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red text-white">
                 <point.icon className="h-6 w-6" />
               </div>
-              <h3 className="mt-6 font-heading text-2xl text-brand-red">{point.title}</h3>
+              <h3 className="mt-6 font-heading text-2xl leading-tight text-brand-ink">
+                {point.title}
+              </h3>
               <p className="mt-3 text-sm leading-7 text-brand-ink/70 dark:text-stone-300/80">
                 {point.description}
               </p>

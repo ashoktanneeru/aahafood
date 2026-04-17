@@ -4,15 +4,15 @@ export function HomeCta() {
   return (
     <section className="section-shell pb-24">
       <div className="overflow-hidden rounded-[2.5rem] bg-brand-green p-8 text-white shadow-float sm:p-12">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-yellow">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-yellow">
           Ready To Order
         </p>
         <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <h2 className="font-heading text-4xl sm:text-5xl">
+            <h2 className="max-w-xl font-heading text-4xl leading-tight text-white sm:text-5xl">
               Bring home the taste of slow-crafted Indian comfort.
             </h2>
-            <p className="mt-4 text-white/80">
+            <p className="mt-4 max-w-xl text-white/84">
               Shop online, save favorites, and place your order in minutes through
               WhatsApp or Razorpay.
             </p>

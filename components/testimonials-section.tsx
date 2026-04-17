@@ -35,12 +35,12 @@ export function TestimonialsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.35 }}
             transition={{ delay: index * 0.12, duration: 0.5 }}
-            className="rounded-[2rem] border border-brand-red/10 bg-white/80 p-6 shadow-soft dark:bg-white/5"
+            className="flex h-full flex-col rounded-[2rem] border border-brand-red/10 bg-white/80 p-6 shadow-soft dark:bg-white/5"
           >
-            <p className="text-lg leading-8 text-brand-ink/80 dark:text-stone-200/90">
+            <p className="flex-1 text-lg leading-8 text-brand-ink/80 dark:text-stone-200/90">
               “{item.quote}”
             </p>
-            <footer className="mt-6 text-sm font-semibold uppercase tracking-[0.25em] text-brand-red/70">
+            <footer className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-brand-ink/65 dark:text-stone-300/80">
               {item.name}
             </footer>
           </motion.blockquote>

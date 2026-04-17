@@ -75,7 +75,7 @@ export function ProductCatalog({
 
       {filtered.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-brand-red/20 p-10 text-center">
-          <p className="font-heading text-3xl text-brand-red">No products found</p>
+          <p className="font-heading text-3xl text-brand-ink">No products found</p>
           <p className="mt-3 text-brand-ink/70 dark:text-stone-300/80">
             Try a different search term or switch the category filter.
           </p>
