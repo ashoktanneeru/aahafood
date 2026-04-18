@@ -10,6 +10,23 @@ begin
 end;
 $$;
 
+create table if not exists public.categories (
+  slug text primary key,
+  label text not null,
+  description text not null default '',
+  gradient text not null default 'linear-gradient(135deg, #2E7D32, #C9E21A)',
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone('utc'::text, now())
+);
+
+drop trigger if exists set_categories_updated_at on public.categories;
+create trigger set_categories_updated_at
+before update on public.categories
+for each row
+execute function public.set_updated_at();
+
 create table if not exists public.products (
   id text primary key,
   name text not null,
@@ -67,15 +84,31 @@ create table if not exists public.visitor_events (
   created_at timestamp with time zone not null default timezone('utc'::text, now())
 );
 
+create index if not exists idx_categories_display_order on public.categories(display_order, label);
 create index if not exists idx_products_category_slug on public.products(category_slug);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_orders_phone on public.orders(phone);
 create index if not exists idx_visitor_events_created_at on public.visitor_events(created_at desc);
 create index if not exists idx_visitor_events_session_id on public.visitor_events(session_id);
 
+alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.visitor_events enable row level security;
+
+drop policy if exists "Public can view active categories" on public.categories;
+create policy "Public can view active categories"
+on public.categories
+for select
+using (is_active = true or auth.role() = 'authenticated');
+
+drop policy if exists "Authenticated can manage categories" on public.categories;
+create policy "Authenticated can manage categories"
+on public.categories
+for all
+to authenticated
+using (true)
+with check (true);
 
 drop policy if exists "Public can view active products" on public.products;
 create policy "Public can view active products"

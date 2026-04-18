@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
-import { categories } from "@/data/products";
 import { SectionHeading } from "@/components/section-heading";
+import { getStoreCategories } from "@/lib/catalog";
 
-export function CategoriesSection() {
+export async function CategoriesSection() {
+  const categories = await getStoreCategories();
+
   return (
     <section className="section-shell py-24">
       <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">

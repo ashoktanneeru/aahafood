@@ -1,5 +1,5 @@
 import { ProductCatalog } from "@/components/product-catalog";
-import { getStoreProducts } from "@/lib/catalog";
+import { getStoreCategories, getStoreProducts } from "@/lib/catalog";
 
 export const metadata = {
   title: "Products",
@@ -13,7 +13,11 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const [params, products] = await Promise.all([searchParams, getStoreProducts()]);
+  const [params, products, categories] = await Promise.all([
+    searchParams,
+    getStoreProducts(),
+    getStoreCategories(),
+  ]);
 
   return (
     <section className="section-shell py-24">
@@ -29,7 +33,11 @@ export default async function ProductsPage({
           snacks, and roasted fox nuts.
         </p>
       </div>
-      <ProductCatalog products={products} initialCategory={params.category ?? "all"} />
+      <ProductCatalog
+        products={products}
+        categories={categories}
+        initialCategory={params.category ?? "all"}
+      />
     </section>
   );
 }

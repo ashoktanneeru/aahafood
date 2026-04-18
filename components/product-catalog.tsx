@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
 import { ProductCard } from "@/components/product-card";
-import { categories } from "@/data/products";
-import { Product } from "@/lib/types";
+import { Category, Product } from "@/lib/types";
 
 export function ProductCatalog({
   products,
+  categories,
   initialCategory = "all",
 }: {
   products: Product[];
+  categories: Category[];
   initialCategory?: string;
 }) {
   const [query, setQuery] = useState("");

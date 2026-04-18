@@ -13,6 +13,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
+  Tag,
   Trash2,
   Upload,
   Users,
@@ -20,13 +21,14 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { categories, products as starterProducts } from "@/data/products";
+import { categories as fallbackCategories, products as starterProducts } from "@/data/products";
 import {
   createSupabaseBrowserClient,
   getProductMediaBucket,
   isSupabaseConfigured,
 } from "@/lib/supabase";
 import {
+  type Category,
   type CustomerSummary,
   type Diet,
   type Order,
@@ -39,12 +41,33 @@ import { cn, formatCurrency } from "@/lib/utils";
 
 type AdminSection =
   | "overview"
+  | "categories"
   | "products"
   | "orders"
   | "inventory"
   | "customers"
   | "media"
   | "visitors";
+
+type CategoryFormState = {
+  slug: string;
+  label: string;
+  description: string;
+  gradient: string;
+  displayOrder: string;
+  isActive: boolean;
+};
+
+type CategoryRecord = {
+  slug: string;
+  label: string;
+  description: string;
+  gradient: string;
+  display_order: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
 
 type ProductFormState = {
   id: string;
@@ -111,6 +134,7 @@ type VisitorRecord = {
 
 const sections: Array<{ id: AdminSection; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: "overview", label: "Dashboard", icon: BarChart3 },
+  { id: "categories", label: "Categories", icon: Tag },
   { id: "products", label: "Products", icon: PackageSearch },
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "inventory", label: "Inventory", icon: Boxes },
@@ -145,6 +169,19 @@ function formatDateTime(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function normalizeCategory(record: CategoryRecord): Category {
+  return {
+    slug: record.slug,
+    label: record.label,
+    description: record.description,
+    gradient: record.gradient,
+    displayOrder: record.display_order ?? 0,
+    isActive: record.is_active ?? true,
+    createdAt: record.created_at ?? undefined,
+    updatedAt: record.updated_at ?? undefined,
+  };
 }
 
 function normalizeProduct(record: ProductRecord): Product {
@@ -201,13 +238,35 @@ function normalizeVisitor(record: VisitorRecord): VisitorEvent {
   };
 }
 
-function createEmptyProductForm(): ProductFormState {
+function createEmptyCategoryForm(): CategoryFormState {
+  return {
+    slug: "",
+    label: "",
+    description: "",
+    gradient: "linear-gradient(135deg, #2E7D32, #C9E21A)",
+    displayOrder: "0",
+    isActive: true,
+  };
+}
+
+function categoryToForm(category: Category): CategoryFormState {
+  return {
+    slug: category.slug,
+    label: category.label,
+    description: category.description,
+    gradient: category.gradient,
+    displayOrder: String(category.displayOrder ?? 0),
+    isActive: category.isActive ?? true,
+  };
+}
+
+function createEmptyProductForm(categoryOptions: Category[] = fallbackCategories): ProductFormState {
   return {
     id: "",
     name: "",
     price: "",
     description: "",
-    categorySlug: categories[0]?.slug ?? "pickles",
+    categorySlug: categoryOptions[0]?.slug ?? "pickles",
     diet: "veg",
     sku: "",
     inventoryCount: "0",
@@ -351,13 +410,17 @@ export function AdminApp() {
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>("overview");
+  const [managedCategories, setManagedCategories] = useState<Category[]>(fallbackCategories);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [visitors, setVisitors] = useState<VisitorEvent[]>([]);
   const [assets, setAssets] = useState<StorageAsset[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [form, setForm] = useState<ProductFormState>(createEmptyProductForm());
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(createEmptyCategoryForm());
+  const [editingCategorySlug, setEditingCategorySlug] = useState<string | null>(null);
+  const [categorySaveLoading, setCategorySaveLoading] = useState(false);
+  const [form, setForm] = useState<ProductFormState>(createEmptyProductForm(fallbackCategories));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -365,6 +428,7 @@ export function AdminApp() {
   const [orderSavingId, setOrderSavingId] = useState<string | null>(null);
   const [inventorySavingId, setInventorySavingId] = useState<string | null>(null);
   const [productSearch, setProductSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
   const [orderSearch, setOrderSearch] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [visitorSearch, setVisitorSearch] = useState("");
@@ -401,7 +465,18 @@ export function AdminApp() {
     const bucket = getProductMediaBucket();
 
     try {
-      const [productResponse, orderResponse, visitorResponse, mediaResponse] = await Promise.all([
+      const [
+        categoryResponse,
+        productResponse,
+        orderResponse,
+        visitorResponse,
+        mediaResponse,
+      ] = await Promise.all([
+        supabase
+          .from("categories")
+          .select("*")
+          .order("display_order", { ascending: true })
+          .order("label", { ascending: true }),
         supabase.from("products").select("*").order("updated_at", { ascending: false }),
         supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(200),
         supabase.from("visitor_events").select("*").order("created_at", { ascending: false }).limit(400),
@@ -423,6 +498,12 @@ export function AdminApp() {
         throw visitorResponse.error;
       }
 
+      const nextCategories =
+        !categoryResponse.error && categoryResponse.data && categoryResponse.data.length > 0
+          ? (categoryResponse.data as CategoryRecord[]).map(normalizeCategory)
+          : fallbackCategories;
+
+      setManagedCategories(nextCategories);
       setProducts(((productResponse.data ?? []) as ProductRecord[]).map(normalizeProduct));
       setOrders(((orderResponse.data ?? []) as OrderRecord[]).map(normalizeOrder));
       setVisitors(((visitorResponse.data ?? []) as VisitorRecord[]).map(normalizeVisitor));
@@ -451,6 +532,7 @@ export function AdminApp() {
 
   useEffect(() => {
     if (!session) {
+      setManagedCategories(fallbackCategories);
       setProducts([]);
       setOrders([]);
       setVisitors([]);
@@ -460,6 +542,23 @@ export function AdminApp() {
 
     void loadAdminData();
   }, [session]);
+
+  useEffect(() => {
+    if (editingId) {
+      return;
+    }
+
+    setForm((current) => {
+      if (managedCategories.some((category) => category.slug === current.categorySlug)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        categorySlug: managedCategories[0]?.slug ?? "pickles",
+      };
+    });
+  }, [editingId, managedCategories]);
 
   const customerSummaries = useMemo(() => toCustomerSummaries(orders), [orders]);
 
@@ -522,6 +621,18 @@ export function AdminApp() {
     );
   }, [productSearch, products]);
 
+  const filteredCategories = useMemo(() => {
+    const query = categorySearch.trim().toLowerCase();
+
+    if (!query) {
+      return managedCategories;
+    }
+
+    return managedCategories.filter((category) =>
+      `${category.label} ${category.slug} ${category.description}`.toLowerCase().includes(query),
+    );
+  }, [categorySearch, managedCategories]);
+
   const filteredOrders = useMemo(() => {
     const query = orderSearch.trim().toLowerCase();
 
@@ -563,8 +674,13 @@ export function AdminApp() {
   }, [visitorSearch, visitors]);
 
   function resetProductForm() {
-    setForm(createEmptyProductForm());
+    setForm(createEmptyProductForm(managedCategories));
     setEditingId(null);
+  }
+
+  function resetCategoryForm() {
+    setCategoryForm(createEmptyCategoryForm());
+    setEditingCategorySlug(null);
   }
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
@@ -591,6 +707,76 @@ export function AdminApp() {
     await supabase.auth.signOut();
   }
 
+  async function handleSaveCategory() {
+    if (!supabase) {
+      return;
+    }
+
+    if (!categoryForm.label.trim()) {
+      setDataError("Category label is required.");
+      return;
+    }
+
+    setCategorySaveLoading(true);
+    setDataError(null);
+
+    const slug = (editingCategorySlug ?? categoryForm.slug.trim()) || slugify(categoryForm.label);
+
+    try {
+      const { error } = await supabase.from("categories").upsert({
+        slug,
+        label: categoryForm.label.trim(),
+        description: categoryForm.description.trim(),
+        gradient: categoryForm.gradient.trim(),
+        display_order: Number(categoryForm.displayOrder || 0),
+        is_active: categoryForm.isActive,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      await loadAdminData();
+      resetCategoryForm();
+      setActiveSection("categories");
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to save category.");
+    } finally {
+      setCategorySaveLoading(false);
+    }
+  }
+
+  async function handleDeleteCategory(slug: string) {
+    if (!supabase) {
+      return;
+    }
+
+    if (products.some((product) => product.categorySlug === slug)) {
+      setDataError("Move or update products in this category before deleting it.");
+      return;
+    }
+
+    if (!window.confirm("Delete this category?")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("categories").delete().eq("slug", slug);
+
+      if (error) {
+        throw error;
+      }
+
+      if (editingCategorySlug === slug) {
+        resetCategoryForm();
+      }
+
+      await loadAdminData();
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to delete category.");
+    }
+  }
+
   async function handleSaveProduct() {
     if (!supabase) {
       return;
@@ -604,7 +790,7 @@ export function AdminApp() {
     setSaveLoading(true);
     setDataError(null);
 
-    const category = categories.find((item) => item.slug === form.categorySlug);
+    const category = managedCategories.find((item) => item.slug === form.categorySlug);
     const id = (editingId ?? form.id.trim()) || slugify(form.name);
 
     try {
@@ -671,6 +857,8 @@ export function AdminApp() {
     setDataError(null);
 
     try {
+      await handleSeedCategories();
+
       const rows = starterProducts.map((product, index) => ({
         id: product.id,
         name: product.name,
@@ -700,6 +888,36 @@ export function AdminApp() {
       setDataError(error instanceof Error ? error.message : "Unable to seed starter catalog.");
     } finally {
       setSeedLoading(false);
+    }
+  }
+
+  async function handleSeedCategories() {
+    if (!supabase) {
+      return;
+    }
+
+    const categoryRows = fallbackCategories.map((category, index) => ({
+      slug: category.slug,
+      label: category.label,
+      description: category.description,
+      gradient: category.gradient,
+      display_order: category.displayOrder ?? index,
+      is_active: category.isActive ?? true,
+    }));
+
+    const categoryResult = await supabase.from("categories").upsert(categoryRows);
+
+    if (categoryResult.error && !categoryResult.error.message.toLowerCase().includes("categories")) {
+      throw categoryResult.error;
+    }
+  }
+
+  async function handleSeedStarterCategories() {
+    try {
+      await handleSeedCategories();
+      await loadAdminData();
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to seed starter categories.");
     }
   }
 
@@ -864,7 +1082,7 @@ export function AdminApp() {
               activity.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <StatCard label="Modules" value="7" tone="text-brand-green" helper="Dashboard, products, orders, inventory, users, media, visitors" />
+              <StatCard label="Modules" value="8" tone="text-brand-green" helper="Dashboard, categories, products, orders, inventory, users, media, visitors" />
               <StatCard label="Storefront Source" value="Live" tone="text-brand-red" helper="Products can sync from Supabase instead of static JSON" />
             </div>
           </div>
@@ -1129,6 +1347,229 @@ export function AdminApp() {
             </div>
           ) : null}
 
+          {activeSection === "categories" ? (
+            <div className="grid gap-6 2xl:grid-cols-[0.9fr_1.1fr]">
+              <div className="rounded-[2rem] border border-white/50 bg-white/85 p-6 shadow-soft dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-green">
+                      Category Editor
+                    </p>
+                    <h2 className="mt-2 font-heading text-3xl text-brand-ink dark:text-stone-100">
+                      {editingCategorySlug ? "Edit category" : "Create category"}
+                    </h2>
+                  </div>
+                  {editingCategorySlug ? (
+                    <button
+                      type="button"
+                      onClick={resetCategoryForm}
+                      className="rounded-full border border-brand-red/10 px-4 py-2 text-sm font-semibold text-brand-red"
+                    >
+                      New
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <label className="block md:col-span-2">
+                    <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                      Category label
+                    </span>
+                    <input
+                      value={categoryForm.label}
+                      onChange={(event) =>
+                        setCategoryForm((current) => ({
+                          ...current,
+                          label: event.target.value,
+                          slug: editingCategorySlug ? current.slug : slugify(event.target.value),
+                        }))
+                      }
+                      className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                      Slug
+                    </span>
+                    <input
+                      value={categoryForm.slug}
+                      onChange={(event) =>
+                        setCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))
+                      }
+                      disabled={Boolean(editingCategorySlug)}
+                      className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white/5"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                      Display order
+                    </span>
+                    <input
+                      value={categoryForm.displayOrder}
+                      onChange={(event) =>
+                        setCategoryForm((current) => ({ ...current, displayOrder: event.target.value }))
+                      }
+                      className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                    />
+                  </label>
+                  <label className="block md:col-span-2">
+                    <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                      Description
+                    </span>
+                    <textarea
+                      value={categoryForm.description}
+                      onChange={(event) =>
+                        setCategoryForm((current) => ({ ...current, description: event.target.value }))
+                      }
+                      className="min-h-28 w-full rounded-2xl border border-brand-red/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                    />
+                  </label>
+                  <label className="block md:col-span-2">
+                    <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                      Gradient CSS
+                    </span>
+                    <input
+                      value={categoryForm.gradient}
+                      onChange={(event) =>
+                        setCategoryForm((current) => ({ ...current, gradient: event.target.value }))
+                      }
+                      className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <label className="inline-flex items-center gap-2 rounded-full border border-brand-green/15 bg-brand-green/6 px-4 py-2 text-sm font-semibold text-brand-green">
+                    <input
+                      type="checkbox"
+                      checked={categoryForm.isActive}
+                      onChange={(event) =>
+                        setCategoryForm((current) => ({ ...current, isActive: event.target.checked }))
+                      }
+                    />
+                    Active
+                  </label>
+                </div>
+
+                <div
+                  className="mt-6 h-32 rounded-[1.6rem] border border-brand-red/10"
+                  style={{ background: categoryForm.gradient }}
+                />
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveCategory()}
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-brand-green px-6 text-sm font-semibold text-white"
+                  >
+                    {categorySaveLoading ? (
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Save category
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSeedStarterCategories()}
+                    className="inline-flex h-12 items-center justify-center rounded-full border border-brand-red/10 px-6 text-sm font-semibold text-brand-red"
+                  >
+                    Seed starter categories
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-white/50 bg-white/85 p-6 shadow-soft dark:border-white/10 dark:bg-white/5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-green">
+                      Category Library
+                    </p>
+                    <h2 className="mt-2 font-heading text-3xl text-brand-ink dark:text-stone-100">
+                      Manage storefront sections
+                    </h2>
+                  </div>
+                  <label className="relative block min-w-[260px]">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-ink/40" />
+                    <input
+                      value={categorySearch}
+                      onChange={(event) => setCategorySearch(event.target.value)}
+                      placeholder="Search categories"
+                      className="h-12 w-full rounded-full border border-brand-red/10 bg-white pl-11 pr-4 text-sm outline-none dark:bg-white/5"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  {filteredCategories.map((category) => (
+                    <div
+                      key={category.slug}
+                      className="rounded-[1.5rem] border border-brand-red/10 bg-white/75 p-4 dark:bg-white/5"
+                    >
+                      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="h-16 w-16 rounded-[1.2rem] border border-white/40"
+                            style={{ background: category.gradient }}
+                          />
+                          <div>
+                            <p className="font-semibold text-brand-ink dark:text-stone-100">
+                              {category.label}
+                            </p>
+                            <p className="text-sm text-brand-ink/60 dark:text-stone-400">
+                              {category.slug}
+                            </p>
+                            <p className="mt-1 text-sm text-brand-ink/65 dark:text-stone-400">
+                              {products.filter((product) => product.categorySlug === category.slug).length} products
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]",
+                              category.isActive
+                                ? "bg-brand-green/10 text-brand-green"
+                                : "bg-brand-ink/8 text-brand-ink/70 dark:text-stone-300",
+                            )}
+                          >
+                            {category.isActive ? "active" : "inactive"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCategoryForm(categoryToForm(category));
+                              setEditingCategorySlug(category.slug);
+                            }}
+                            className="rounded-full border border-brand-green/20 px-4 py-2 text-sm font-semibold text-brand-green"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteCategory(category.slug)}
+                            className="rounded-full border border-red-500/20 px-4 py-2 text-sm font-semibold text-red-600"
+                          >
+                            <Trash2 className="mr-2 inline-flex h-4 w-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-sm leading-6 text-brand-ink/65 dark:text-stone-400">
+                        {category.description}
+                      </p>
+                    </div>
+                  ))}
+                  {filteredCategories.length === 0 ? (
+                    <p className="text-sm text-brand-ink/60 dark:text-stone-400">
+                      No categories found. Seed the starter categories to begin.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {activeSection === "products" ? (
             <div className="grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
               <div className="rounded-[2rem] border border-white/50 bg-white/85 p-6 shadow-soft dark:border-white/10 dark:bg-white/5">
@@ -1199,7 +1640,7 @@ export function AdminApp() {
                       onChange={(event) => setForm((current) => ({ ...current, categorySlug: event.target.value }))}
                       className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
                     >
-                      {categories.map((category) => (
+                      {managedCategories.map((category) => (
                         <option key={category.slug} value={category.slug}>
                           {category.label}
                         </option>

@@ -1,6 +1,17 @@
-import { products as fallbackProducts } from "@/data/products";
+import { categories as fallbackCategories, products as fallbackProducts } from "@/data/products";
 import { createSupabasePublicClient } from "@/lib/supabase";
-import { Product } from "@/lib/types";
+import { Category, Product } from "@/lib/types";
+
+type CategoryRecord = {
+  slug: string;
+  label: string;
+  description: string;
+  gradient: string;
+  display_order: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
 
 type ProductRecord = {
   id: string;
@@ -21,6 +32,19 @@ type ProductRecord = {
   created_at: string | null;
   updated_at: string | null;
 };
+
+function normalizeCategory(record: CategoryRecord): Category {
+  return {
+    slug: record.slug,
+    label: record.label,
+    description: record.description,
+    gradient: record.gradient,
+    displayOrder: record.display_order ?? 0,
+    isActive: record.is_active ?? true,
+    createdAt: record.created_at ?? undefined,
+    updatedAt: record.updated_at ?? undefined,
+  };
+}
 
 function normalizeProduct(record: ProductRecord): Product {
   const images = record.images?.filter(Boolean) ?? [];
@@ -45,6 +69,31 @@ function normalizeProduct(record: ProductRecord): Product {
     createdAt: record.created_at ?? undefined,
     updatedAt: record.updated_at ?? undefined,
   };
+}
+
+export async function getStoreCategories() {
+  const supabase = createSupabasePublicClient();
+
+  if (!supabase) {
+    return fallbackCategories;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
+      .order("label", { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return fallbackCategories;
+    }
+
+    return (data as CategoryRecord[]).map(normalizeCategory);
+  } catch {
+    return fallbackCategories;
+  }
 }
 
 export async function getStoreProducts() {

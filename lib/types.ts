@@ -1,5 +1,16 @@
 export type Diet = "veg" | "non-veg";
 
+export type Category = {
+  slug: string;
+  label: string;
+  description: string;
+  gradient: string;
+  displayOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type Product = {
   id: string;
   name: string;

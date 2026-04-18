@@ -1,11 +1,11 @@
-import { Product } from "@/lib/types";
+import { Category, Product } from "@/lib/types";
 
 const productImages = (id: string) => [
   `/products/mockups/${id}-front.svg`,
   `/products/mockups/${id}-angle.svg`,
 ];
 
-export const categories = [
+export const categories: Category[] = [
   {
     slug: "pickles",
     label: "Pickles",

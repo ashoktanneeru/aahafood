@@ -6,7 +6,7 @@ Premium homemade Indian food storefront built with Next.js App Router, Tailwind 
 
 - Premium mobile-first storefront with cinematic homepage sections
 - Supabase-backed product source with static fallback data
-- `/admin` workspace for product, order, inventory, customer, media, and visitor management
+- `/admin` workspace for category, product, order, inventory, customer, media, and visitor management
 - Supabase Auth login for admin access
 - Supabase Storage uploads for product images and videos
 - LocalStorage cart with WhatsApp and Razorpay checkout flows
@@ -51,12 +51,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 ### What The SQL Creates
 
+- `categories` table for storefront sections, gradients, descriptions, and display order
 - `products` table for the live catalog, images, videos, featured flags, and inventory
 - `orders` table for checkout submissions and order statuses
 - `visitor_events` table for lightweight traffic tracking
 - `product-media` storage bucket for image/video uploads
 - RLS policies that allow:
-  - Public product reads for active products
+  - Public category and product reads for active records
   - Public order inserts
   - Public visitor event inserts
   - Authenticated admin management for products, orders, visitors, and storage
@@ -72,6 +73,7 @@ The admin area lives at `/admin`.
 ## Admin Features
 
 - Dashboard with revenue, orders, visitors, and stock alerts
+- Category management: add, edit, delete, reorder, activate/deactivate
 - Product management: add, edit, delete, feature, activate/deactivate
 - Media management: upload images/videos and attach them to products
 - Order management: review orders and update status
@@ -93,3 +95,5 @@ The admin area lives at `/admin`.
 4. Redeploy after Supabase setup.
 
 If Supabase is configured, the storefront reads live products from the database. If not, it falls back to the bundled starter catalog.
+
+If you previously ran an older version of the SQL setup before categories were added, rerun [supabase/admin-setup.sql](/Users/ashok/Documents/aahafood/aahafood/supabase/admin-setup.sql) to create the `categories` table and policies.
