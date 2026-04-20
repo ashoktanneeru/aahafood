@@ -12,11 +12,11 @@ export default function CheckoutPage() {
           Checkout
         </span>
         <h1 className="mt-5 max-w-2xl font-heading text-4xl leading-tight text-brand-ink sm:text-5xl">
-          One final step before your homemade box is prepared.
+          One secure payment step before your homemade box is prepared.
         </h1>
         <p className="mt-4 text-base leading-7 text-brand-ink/70 dark:text-stone-300/80">
-          Share your delivery details and place the order using WhatsApp or a
-          Razorpay payment link. No account required.
+          Share your delivery details, create a secure Razorpay order on the server,
+          and complete payment with Standard Checkout. No account required.
         </p>
       </div>
       <CheckoutForm />

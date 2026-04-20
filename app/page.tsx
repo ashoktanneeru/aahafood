@@ -4,17 +4,20 @@ import { HeroSection } from "@/components/hero-section";
 import { HomeCta } from "@/components/home-cta";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { WhyChooseUs } from "@/components/why-choose-us";
+import { getHomepageContent } from "@/lib/homepage-content";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const homepageContent = await getHomepageContent();
+
   return (
     <>
-      <HeroSection />
+      <HeroSection videos={homepageContent.heroVideos} />
       <FeaturedProducts />
       <CategoriesSection />
       <WhyChooseUs />
-      <TestimonialsSection />
+      <TestimonialsSection testimonials={homepageContent.testimonials} />
       <HomeCta />
     </>
   );

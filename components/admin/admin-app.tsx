@@ -13,6 +13,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
+  Sparkles,
   Tag,
   Trash2,
   Upload,
@@ -22,6 +23,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { categories as fallbackCategories, products as starterProducts } from "@/data/products";
+import { fallbackHomepageContent } from "@/lib/homepage-content";
+import { useToast } from "@/hooks/use-toast";
 import {
   createSupabaseBrowserClient,
   getProductMediaBucket,
@@ -31,6 +34,7 @@ import {
   type Category,
   type CustomerSummary,
   type Diet,
+  type HomepageContent,
   type Order,
   type OrderStatus,
   type Product,
@@ -42,6 +46,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 type AdminSection =
   | "overview"
   | "categories"
+  | "content"
   | "products"
   | "orders"
   | "inventory"
@@ -67,6 +72,20 @@ type CategoryRecord = {
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;
+};
+
+type SiteContentRecord = {
+  key: string;
+  value: HomepageContent | null;
+  updated_at: string | null;
+};
+
+type AdminUserRecord = {
+  user_id: string;
+  email: string;
+  role: string;
+  is_active: boolean | null;
+  created_at: string | null;
 };
 
 type ProductFormState = {
@@ -135,6 +154,7 @@ type VisitorRecord = {
 const sections: Array<{ id: AdminSection; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: "overview", label: "Dashboard", icon: BarChart3 },
   { id: "categories", label: "Categories", icon: Tag },
+  { id: "content", label: "Content", icon: Sparkles },
   { id: "products", label: "Products", icon: PackageSearch },
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "inventory", label: "Inventory", icon: Boxes },
@@ -182,6 +202,29 @@ function normalizeCategory(record: CategoryRecord): Category {
     createdAt: record.created_at ?? undefined,
     updatedAt: record.updated_at ?? undefined,
   };
+}
+
+function normalizeHomepageContent(value?: HomepageContent | null) {
+  const heroVideos =
+    value?.heroVideos
+      ?.filter((item) => item?.src?.trim() && item?.label?.trim())
+      .map((item) => ({
+        src: item.src.trim(),
+        label: item.label.trim(),
+      })) ?? [];
+
+  const testimonials =
+    value?.testimonials
+      ?.filter((item) => item?.name?.trim() && item?.quote?.trim())
+      .map((item) => ({
+        name: item.name.trim(),
+        quote: item.quote.trim(),
+      })) ?? [];
+
+  return {
+    heroVideos: heroVideos.length > 0 ? heroVideos : fallbackHomepageContent.heroVideos,
+    testimonials: testimonials.length > 0 ? testimonials : fallbackHomepageContent.testimonials,
+  } satisfies HomepageContent;
 }
 
 function normalizeProduct(record: ProductRecord): Product {
@@ -404,19 +447,26 @@ function StatCard({
 
 export function AdminApp() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [session, setSession] = useState<Session | null>(null);
+  const [adminAccess, setAdminAccess] = useState<"checking" | "legacy" | "granted" | "denied">(
+    "checking",
+  );
+  const [adminRole, setAdminRole] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>("overview");
   const [managedCategories, setManagedCategories] = useState<Category[]>(fallbackCategories);
+  const [homepageContent, setHomepageContent] = useState<HomepageContent>(fallbackHomepageContent);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [visitors, setVisitors] = useState<VisitorEvent[]>([]);
   const [assets, setAssets] = useState<StorageAsset[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [contentSaveLoading, setContentSaveLoading] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(createEmptyCategoryForm());
   const [editingCategorySlug, setEditingCategorySlug] = useState<string | null>(null);
   const [categorySaveLoading, setCategorySaveLoading] = useState(false);
@@ -454,8 +504,65 @@ export function AdminApp() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
+  useEffect(() => {
+    if (!supabase) {
+      setAdminAccess("legacy");
+      return;
+    }
+
+    if (!session) {
+      setAdminAccess("checking");
+      setAdminRole(null);
+      return;
+    }
+
+    let ignore = false;
+
+    void (async () => {
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("user_id, email, role, is_active, created_at")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (ignore) {
+        return;
+      }
+
+      if (error) {
+        if (
+          error.message.toLowerCase().includes("admin_users") ||
+          error.message.toLowerCase().includes("relation")
+        ) {
+          setAdminAccess("legacy");
+          setAdminRole("legacy-admin");
+          return;
+        }
+
+        setAdminAccess("denied");
+        setDataError(error.message);
+        return;
+      }
+
+      const row = data as AdminUserRecord | null;
+
+      if (row?.is_active !== false) {
+        setAdminAccess("granted");
+        setAdminRole(row?.role ?? "admin");
+        return;
+      }
+
+      setAdminAccess("denied");
+      setAdminRole(null);
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, [session, supabase]);
+
   async function loadAdminData() {
-    if (!supabase || !session) {
+    if (!supabase || !session || adminAccess === "denied" || adminAccess === "checking") {
       return;
     }
 
@@ -467,6 +574,7 @@ export function AdminApp() {
     try {
       const [
         categoryResponse,
+        contentResponse,
         productResponse,
         orderResponse,
         visitorResponse,
@@ -477,6 +585,7 @@ export function AdminApp() {
           .select("*")
           .order("display_order", { ascending: true })
           .order("label", { ascending: true }),
+        supabase.from("site_content").select("key, value, updated_at").eq("key", "homepage").maybeSingle(),
         supabase.from("products").select("*").order("updated_at", { ascending: false }),
         supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(200),
         supabase.from("visitor_events").select("*").order("created_at", { ascending: false }).limit(400),
@@ -504,6 +613,11 @@ export function AdminApp() {
           : fallbackCategories;
 
       setManagedCategories(nextCategories);
+      setHomepageContent(
+        !contentResponse.error && contentResponse.data
+          ? normalizeHomepageContent((contentResponse.data as SiteContentRecord).value)
+          : fallbackHomepageContent,
+      );
       setProducts(((productResponse.data ?? []) as ProductRecord[]).map(normalizeProduct));
       setOrders(((orderResponse.data ?? []) as OrderRecord[]).map(normalizeOrder));
       setVisitors(((visitorResponse.data ?? []) as VisitorRecord[]).map(normalizeVisitor));
@@ -533,6 +647,7 @@ export function AdminApp() {
   useEffect(() => {
     if (!session) {
       setManagedCategories(fallbackCategories);
+      setHomepageContent(fallbackHomepageContent);
       setProducts([]);
       setOrders([]);
       setVisitors([]);
@@ -540,8 +655,12 @@ export function AdminApp() {
       return;
     }
 
+    if (adminAccess === "denied" || adminAccess === "checking") {
+      return;
+    }
+
     void loadAdminData();
-  }, [session]);
+  }, [adminAccess, session]);
 
   useEffect(() => {
     if (editingId) {
@@ -696,7 +815,19 @@ export function AdminApp() {
 
     if (error) {
       setAuthError(error.message);
+      toast.error({
+        title: "Admin sign-in failed",
+        description: error.message,
+        key: "admin-login-failed",
+      });
+      return;
     }
+
+    toast.success({
+      title: "Welcome back",
+      description: "Admin access granted.",
+      key: "admin-login-success",
+    });
   }
 
   async function handleLogout() {
@@ -705,6 +836,11 @@ export function AdminApp() {
     }
 
     await supabase.auth.signOut();
+    toast.info({
+      title: "Signed out",
+      description: "You have left the admin workspace.",
+      key: "admin-logout",
+    });
   }
 
   async function handleSaveCategory() {
@@ -744,6 +880,42 @@ export function AdminApp() {
     } finally {
       setCategorySaveLoading(false);
     }
+  }
+
+  async function persistHomepageContent(value: HomepageContent) {
+    if (!supabase) {
+      return;
+    }
+
+    setContentSaveLoading(true);
+    setDataError(null);
+
+    try {
+      const normalizedValue = normalizeHomepageContent(value);
+      const { error } = await supabase.from("site_content").upsert({
+        key: "homepage",
+        value: normalizedValue,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setHomepageContent(normalizedValue);
+      await loadAdminData();
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to save homepage content.");
+    } finally {
+      setContentSaveLoading(false);
+    }
+  }
+
+  async function handleSaveHomepageContent() {
+    await persistHomepageContent(homepageContent);
+  }
+
+  async function handleSeedHomepageContent() {
+    await persistHomepageContent(fallbackHomepageContent);
   }
 
   async function handleDeleteCategory(slug: string) {
@@ -1082,7 +1254,7 @@ export function AdminApp() {
               activity.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <StatCard label="Modules" value="8" tone="text-brand-green" helper="Dashboard, categories, products, orders, inventory, users, media, visitors" />
+              <StatCard label="Modules" value="9" tone="text-brand-green" helper="Dashboard, categories, content, products, orders, inventory, users, media, visitors" />
               <StatCard label="Storefront Source" value="Live" tone="text-brand-red" helper="Products can sync from Supabase instead of static JSON" />
             </div>
           </div>
@@ -1140,6 +1312,50 @@ export function AdminApp() {
     );
   }
 
+  if (adminAccess === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-brand-cream dark:bg-stone-950">
+        <LoaderCircle className="h-8 w-8 animate-spin text-brand-green" />
+      </div>
+    );
+  }
+
+  if (adminAccess === "denied") {
+    return (
+      <div className="min-h-screen bg-brand-cream px-4 py-10 dark:bg-stone-950">
+        <div className="mx-auto max-w-4xl rounded-[2.5rem] border border-white/50 bg-white/85 p-8 shadow-soft dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-red">
+            Admin Access Required
+          </p>
+          <h1 className="mt-4 font-heading text-4xl text-brand-ink dark:text-stone-100">
+            This account is authenticated, but it is not assigned an admin role yet.
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-brand-ink/70 dark:text-stone-300/80">
+            Add your user to the <code>admin_users</code> table in Supabase, then refresh this
+            page. The simplest row to insert is:
+          </p>
+          <pre className="mt-6 overflow-x-auto rounded-[1.5rem] bg-stone-950 px-5 py-4 text-sm text-stone-100">
+{`insert into public.admin_users (user_id, email, role)
+values ('${session.user.id}', '${session.user.email ?? ""}', 'owner')
+on conflict (user_id) do update
+set email = excluded.email,
+    role = excluded.role,
+    is_active = true;`}
+          </pre>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex h-12 items-center justify-center rounded-full bg-brand-green px-6 text-sm font-semibold text-white"
+            >
+              Reload after granting access
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(201,226,26,0.16),transparent_24%),linear-gradient(180deg,#f5f6ee_0%,#eef2e3_100%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(201,226,26,0.14),transparent_24%),linear-gradient(180deg,#151915_0%,#101310_100%)]">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-4 py-6 xl:flex-row">
@@ -1153,7 +1369,7 @@ export function AdminApp() {
                 {session.user.email}
               </p>
               <p className="mt-1 text-sm text-brand-ink/60 dark:text-stone-400">
-                Store operations and growth console
+                {adminRole ? `Role: ${adminRole}` : "Store operations and growth console"}
               </p>
             </div>
 
@@ -1231,6 +1447,12 @@ export function AdminApp() {
             {dataError ? (
               <div className="mt-5 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
                 {dataError}
+              </div>
+            ) : null}
+            {adminAccess === "legacy" ? (
+              <div className="mt-5 rounded-[1.5rem] border border-brand-yellow/30 bg-brand-yellow/10 px-4 py-3 text-sm text-brand-ink dark:text-stone-200">
+                Admin is currently running in legacy mode. Rerun the latest Supabase SQL and add
+                your user to <code>admin_users</code> to enforce real admin-role checks.
               </div>
             ) : null}
           </div>
@@ -1565,6 +1787,206 @@ export function AdminApp() {
                       No categories found. Seed the starter categories to begin.
                     </p>
                   ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {activeSection === "content" ? (
+            <div className="space-y-6">
+              <div className="grid gap-6 xl:grid-cols-2">
+                <div className="rounded-[2rem] border border-white/50 bg-white/85 p-6 shadow-soft dark:border-white/10 dark:bg-white/5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-green">
+                        Hero Videos
+                      </p>
+                      <h2 className="mt-2 font-heading text-3xl text-brand-ink dark:text-stone-100">
+                        Control the homepage motion wall
+                      </h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHomepageContent((current) => ({
+                          ...current,
+                          heroVideos: [...current.heroVideos, { src: "", label: "" }],
+                        }))
+                      }
+                      className="rounded-full border border-brand-green/20 px-4 py-2 text-sm font-semibold text-brand-green"
+                    >
+                      Add video
+                    </button>
+                  </div>
+                  <div className="mt-6 space-y-4">
+                    {homepageContent.heroVideos.map((video, index) => (
+                      <div
+                        key={`hero-video-${index}`}
+                        className="rounded-[1.5rem] border border-brand-red/10 bg-white/75 p-4 dark:bg-white/5"
+                      >
+                        <div className="grid gap-4">
+                          <label className="block">
+                            <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                              Video URL
+                            </span>
+                            <input
+                              value={video.src}
+                              onChange={(event) =>
+                                setHomepageContent((current) => ({
+                                  ...current,
+                                  heroVideos: current.heroVideos.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, src: event.target.value } : item,
+                                  ),
+                                }))
+                              }
+                              className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                              Label
+                            </span>
+                            <input
+                              value={video.label}
+                              onChange={(event) =>
+                                setHomepageContent((current) => ({
+                                  ...current,
+                                  heroVideos: current.heroVideos.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, label: event.target.value } : item,
+                                  ),
+                                }))
+                              }
+                              className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                            />
+                          </label>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setHomepageContent((current) => ({
+                                  ...current,
+                                  heroVideos: current.heroVideos.filter((_, itemIndex) => itemIndex !== index),
+                                }))
+                              }
+                              className="rounded-full border border-red-500/20 px-4 py-2 text-sm font-semibold text-red-600"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-white/50 bg-white/85 p-6 shadow-soft dark:border-white/10 dark:bg-white/5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-green">
+                        Testimonials
+                      </p>
+                      <h2 className="mt-2 font-heading text-3xl text-brand-ink dark:text-stone-100">
+                        Refresh social proof without touching code
+                      </h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHomepageContent((current) => ({
+                          ...current,
+                          testimonials: [...current.testimonials, { name: "", quote: "" }],
+                        }))
+                      }
+                      className="rounded-full border border-brand-green/20 px-4 py-2 text-sm font-semibold text-brand-green"
+                    >
+                      Add testimonial
+                    </button>
+                  </div>
+                  <div className="mt-6 space-y-4">
+                    {homepageContent.testimonials.map((testimonial, index) => (
+                      <div
+                        key={`testimonial-${index}`}
+                        className="rounded-[1.5rem] border border-brand-red/10 bg-white/75 p-4 dark:bg-white/5"
+                      >
+                        <div className="grid gap-4">
+                          <label className="block">
+                            <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                              Name
+                            </span>
+                            <input
+                              value={testimonial.name}
+                              onChange={(event) =>
+                                setHomepageContent((current) => ({
+                                  ...current,
+                                  testimonials: current.testimonials.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, name: event.target.value } : item,
+                                  ),
+                                }))
+                              }
+                              className="h-12 w-full rounded-2xl border border-brand-red/10 bg-white px-4 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-2 block text-sm font-medium text-brand-ink dark:text-stone-200">
+                              Quote
+                            </span>
+                            <textarea
+                              value={testimonial.quote}
+                              onChange={(event) =>
+                                setHomepageContent((current) => ({
+                                  ...current,
+                                  testimonials: current.testimonials.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, quote: event.target.value } : item,
+                                  ),
+                                }))
+                              }
+                              className="min-h-28 w-full rounded-2xl border border-brand-red/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-green dark:bg-white/5"
+                            />
+                          </label>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setHomepageContent((current) => ({
+                                  ...current,
+                                  testimonials: current.testimonials.filter(
+                                    (_, itemIndex) => itemIndex !== index,
+                                  ),
+                                }))
+                              }
+                              className="rounded-full border border-red-500/20 px-4 py-2 text-sm font-semibold text-red-600"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-white/50 bg-white/85 p-6 shadow-soft dark:border-white/10 dark:bg-white/5">
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveHomepageContent()}
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-brand-green px-6 text-sm font-semibold text-white"
+                  >
+                    {contentSaveLoading ? (
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Save homepage content
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSeedHomepageContent()}
+                    className="inline-flex h-12 items-center justify-center rounded-full border border-brand-red/10 px-6 text-sm font-semibold text-brand-red"
+                  >
+                    Reset to starter content
+                  </button>
                 </div>
               </div>
             </div>

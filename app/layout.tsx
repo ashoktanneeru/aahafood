@@ -3,6 +3,7 @@ import { Comfortaa } from "next/font/google";
 
 import { AppShell } from "@/components/app-shell";
 import { CartProvider } from "@/components/cart-provider";
+import { ToastProvider } from "@/components/providers/toast-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { siteConfig } from "@/lib/site-config";
 
@@ -69,9 +70,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={comfortaa.variable}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <CartProvider>
-            <AppShell>{children}</AppShell>
-          </CartProvider>
+          <ToastProvider>
+            <CartProvider>
+              <AppShell>{children}</AppShell>
+            </CartProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -3,23 +3,9 @@
 import { motion } from "framer-motion";
 
 import { SectionHeading } from "@/components/section-heading";
+import { Testimonial } from "@/lib/types";
 
-const testimonials = [
-  {
-    name: "Kavya R.",
-    quote: "The mango pickle tastes exactly like what my grandmother used to make. Rich, balanced, and beautifully packed.",
-  },
-  {
-    name: "Rahul S.",
-    quote: "The podi and roasted makhana combo has become a repeat order in our house. It feels boutique, but deeply comforting.",
-  },
-  {
-    name: "Shreya P.",
-    quote: "Finally found a homemade food brand that looks gift-ready and still tastes like it came from a family kitchen.",
-  },
-];
-
-export function TestimonialsSection() {
+export function TestimonialsSection({ testimonials }: { testimonials: Testimonial[] }) {
   return (
     <section className="section-shell py-24">
       <SectionHeading
@@ -31,7 +17,7 @@ export function TestimonialsSection() {
         {testimonials.map((item, index) => (
           <motion.blockquote
             key={item.name}
-            initial={{ opacity: 0, y: 24 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.35 }}
             transition={{ delay: index * 0.12, duration: 0.5 }}

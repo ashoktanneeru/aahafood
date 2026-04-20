@@ -6,9 +6,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
+  const amount = Number.isFinite(value) ? Math.round(value) : 0;
+  const sign = amount < 0 ? "-" : "";
+  const currencySymbol = "\u20B9";
+  const absolute = Math.abs(amount);
+  const digits = String(absolute);
+
+  if (digits.length <= 3) {
+    return `${sign}${currencySymbol}${digits}`;
+  }
+
+  const lastThree = digits.slice(-3);
+  const rest = digits.slice(0, -3);
+  const groupedRest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+
+  return `${sign}${currencySymbol}${groupedRest},${lastThree}`;
 }

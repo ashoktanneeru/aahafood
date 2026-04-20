@@ -11,6 +11,21 @@ export type Category = {
   updatedAt?: string;
 };
 
+export type HeroVideo = {
+  src: string;
+  label: string;
+};
+
+export type Testimonial = {
+  name: string;
+  quote: string;
+};
+
+export type HomepageContent = {
+  heroVideos: HeroVideo[];
+  testimonials: Testimonial[];
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -44,17 +59,24 @@ export type OrderStatus =
   | "cancelled";
 
 export type PaymentMode = "whatsapp" | "razorpay";
+export type PaymentStatus = "pending" | "paid" | "failed";
 
 export type Order = {
   id: string;
   orderNumber: string;
   name: string;
   phone: string;
+  email?: string;
   address: string;
   items: CartItem[];
+  subtotal?: number;
+  shipping?: number;
   totalPrice: number;
   status: OrderStatus;
   paymentMode: PaymentMode;
+  paymentStatus?: PaymentStatus;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   createdAt: string;
   updatedAt?: string;
 };

@@ -40,8 +40,11 @@ export function ProductCatalog({
           <label className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-red/50" />
             <input
+              type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
+              maxLength={80}
+              autoComplete="off"
               placeholder="Search pickles, podis, snacks..."
               className="h-12 w-full rounded-full border border-brand-red/10 bg-white pl-11 pr-4 text-sm outline-none ring-0 transition placeholder:text-brand-ink/40 focus:border-brand-yellow dark:bg-white/5"
             />

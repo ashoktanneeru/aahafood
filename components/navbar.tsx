@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Menu, MoonStar, ShoppingBag, SunMedium, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useCart } from "@/components/cart-provider";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,11 @@ export function Navbar() {
   const { totalItems } = useCart();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-brand-red/10 bg-brand-cream/82 backdrop-blur-xl dark:border-white/10 dark:bg-stone-950/78">
@@ -54,7 +59,15 @@ export function Navbar() {
             className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-brand-red/10 bg-white/80 text-brand-red transition hover:scale-105 dark:border-white/10 dark:bg-white/5 dark:text-brand-yellow"
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? <SunMedium className="h-5 w-5" /> : <MoonStar className="h-5 w-5" />}
+            {mounted ? (
+              theme === "dark" ? (
+                <SunMedium className="h-5 w-5" />
+              ) : (
+                <MoonStar className="h-5 w-5" />
+              )
+            ) : (
+              <MoonStar className="h-5 w-5" />
+            )}
           </button>
           <Link
             href="/cart"

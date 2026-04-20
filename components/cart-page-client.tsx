@@ -5,10 +5,15 @@ import { ShoppingBag } from "lucide-react";
 
 import { CartLineItem } from "@/components/cart-line-item";
 import { useCart } from "@/components/cart-provider";
+import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 
 export function CartPageClient() {
   const { items, subtotal, totalItems, clearCart } = useCart();
+  const toast = useToast();
+  const soldOutItems = items.filter(
+    (item) => typeof item.inventoryCount === "number" && item.inventoryCount <= 0,
+  );
 
   return (
     <>
@@ -21,7 +26,8 @@ export function CartPageClient() {
         </div>
         {items.length > 0 ? (
           <button
-            onClick={clearCart}
+            type="button"
+            onClick={() => clearCart()}
             className="inline-flex h-11 items-center justify-center rounded-full border border-brand-red/20 px-5 text-sm font-medium text-brand-red transition hover:bg-brand-red hover:text-white"
           >
             Clear cart
@@ -48,6 +54,11 @@ export function CartPageClient() {
       ) : (
         <div className="grid gap-8 lg:grid-cols-[1.6fr_0.8fr]">
           <div className="space-y-4">
+            {soldOutItems.length > 0 ? (
+              <div className="rounded-[1.5rem] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+                Some items in your cart are sold out. Please remove them before checkout.
+              </div>
+            ) : null}
             {items.map((item) => (
               <CartLineItem key={item.id} item={item} />
             ))}
@@ -77,7 +88,29 @@ export function CartPageClient() {
               </div>
               <Link
                 href="/checkout"
-                className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand-green px-6 text-sm font-semibold text-white transition hover:bg-brand-green/90"
+                aria-disabled={soldOutItems.length > 0}
+                onClick={(event) => {
+                  if (soldOutItems.length > 0) {
+                    event.preventDefault();
+                    toast.warning({
+                      title: "Update your cart first",
+                      description: "Remove sold-out items before checkout.",
+                      key: "cart-checkout-sold-out",
+                    });
+                    return;
+                  }
+
+                  toast.info({
+                    title: "Proceeding to checkout",
+                    description: "We are taking you to secure payment.",
+                    key: "cart-proceed-checkout",
+                  });
+                }}
+                className={`mt-6 inline-flex h-12 w-full items-center justify-center rounded-full px-6 text-sm font-semibold transition ${
+                  soldOutItems.length > 0
+                    ? "bg-brand-ink/20 text-brand-ink/45 dark:text-stone-500"
+                    : "bg-brand-green text-white hover:bg-brand-green/90"
+                }`}
               >
                 Proceed to checkout
               </Link>

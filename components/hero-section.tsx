@@ -7,23 +7,9 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { siteConfig } from "@/lib/site-config";
+import { HeroVideo } from "@/lib/types";
 
-const videos = [
-  {
-    src: "https://player.vimeo.com/external/434045526.sd.mp4?s=6d484d25cf14f7d8baeb1fed909749d16f285194&profile_id=139&oauth2_token_id=57447761",
-    label: "Pickle preparation",
-  },
-  {
-    src: "https://player.vimeo.com/external/434045540.sd.mp4?s=6ca0c4fd6f77b8c65bfe6430e75068d90f196c35&profile_id=139&oauth2_token_id=57447761",
-    label: "Spices grinding",
-  },
-  {
-    src: "https://player.vimeo.com/external/371433846.sd.mp4?s=756bbcf7b4ad89c1c3cc596f0dd013d3a7481529&profile_id=139&oauth2_token_id=57447761",
-    label: "Traditional cooking",
-  },
-];
-
-export function HeroSection() {
+export function HeroSection({ videos }: { videos: HeroVideo[] }) {
   return (
     <section className="section-shell relative pt-4 sm:pt-6">
       <div className="relative overflow-hidden rounded-[2.5rem] border border-brand-red/10 bg-brand-red shadow-float">
@@ -33,7 +19,7 @@ export function HeroSection() {
         <div className="grid min-h-[82vh] lg:grid-cols-[1.05fr_0.95fr]">
           <motion.div
             variants={staggerContainer}
-            initial="hidden"
+            initial={false}
             animate="show"
             className="relative z-10 flex flex-col justify-center px-6 py-14 sm:px-10 lg:px-16 lg:py-16"
           >
@@ -96,7 +82,7 @@ export function HeroSection() {
             {videos.map((video, index) => (
               <motion.div
                 key={video.label}
-                initial={{ opacity: 0, y: 24 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + index * 0.12, duration: 0.7 }}
                 className={`relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-white/10 ${

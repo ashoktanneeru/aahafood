@@ -9,6 +9,9 @@ import { formatCurrency } from "@/lib/utils";
 
 export function CartLineItem({ item }: { item: CartItem }) {
   const { removeItem, updateQuantity } = useCart();
+  const isSoldOut = typeof item.inventoryCount === "number" && item.inventoryCount <= 0;
+  const canIncrease =
+    typeof item.inventoryCount !== "number" || item.quantity < item.inventoryCount;
 
   return (
     <div className="glass-panel flex flex-col gap-4 rounded-[2rem] p-4 shadow-soft sm:flex-row sm:items-center">
@@ -23,6 +26,15 @@ export function CartLineItem({ item }: { item: CartItem }) {
         <p className="mt-2 text-sm leading-6 text-brand-ink/70 dark:text-stone-300/80">
           {item.description}
         </p>
+        {isSoldOut ? (
+          <p className="mt-3 inline-flex w-fit rounded-full bg-brand-red px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+            Sold out
+          </p>
+        ) : typeof item.inventoryCount === "number" && item.inventoryCount <= 5 ? (
+          <p className="mt-3 inline-flex w-fit rounded-full bg-brand-yellow px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-red">
+            Only {item.inventoryCount} left
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-col gap-3 sm:items-end">
         <span className="text-lg font-semibold text-brand-green">
@@ -38,7 +50,8 @@ export function CartLineItem({ item }: { item: CartItem }) {
           <span className="w-10 text-center text-sm font-semibold">{item.quantity}</span>
           <button
             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-brand-red"
+            disabled={!canIncrease || isSoldOut}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-brand-red disabled:cursor-not-allowed disabled:text-brand-red/30"
           >
             <Plus className="h-4 w-4" />
           </button>

@@ -3,16 +3,17 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { products } from "@/data/products";
+import { useToast } from "@/hooks/use-toast";
 import { CartItem, Product } from "@/lib/types";
 
 type CartContextValue = {
   items: CartItem[];
   totalItems: number;
   subtotal: number;
-  addItem: (product: Product) => void;
+  addItem: (product: Product, quantity?: number) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
-  clearCart: () => void;
+  clearCart: (options?: { silent?: boolean }) => void;
 };
 
 const STORAGE_KEY = "aahafoods-cart";
@@ -46,6 +47,7 @@ function isStoredCartItem(value: unknown): value is CartItem {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const toast = useToast();
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -94,33 +96,153 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       items,
       totalItems,
       subtotal,
-      addItem: (product) => {
+      addItem: (product, quantity = 1) => {
+        if (typeof product.inventoryCount === "number" && product.inventoryCount <= 0) {
+          toast.warning({
+            title: `${product.name} is sold out`,
+            description: "Pick another pantry favorite or check back soon.",
+            key: `sold-out:${product.id}`,
+          });
+          return;
+        }
+
+        let addedQuantity = 0;
+        let blockedByStock = false;
+
         setItems((current) => {
           const existing = current.find((item) => item.id === product.id);
+
+          const maxAddable =
+            typeof product.inventoryCount === "number"
+              ? Math.max(product.inventoryCount - (existing?.quantity ?? 0), 0)
+              : quantity;
+
+          addedQuantity =
+            typeof product.inventoryCount === "number"
+              ? Math.min(quantity, maxAddable)
+              : quantity;
+
+          blockedByStock = addedQuantity < quantity;
+
+          if (addedQuantity <= 0) {
+            return current;
+          }
+
           if (existing) {
             return current.map((item) =>
-              item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+              item.id === product.id
+                ? { ...item, quantity: item.quantity + addedQuantity }
+                : item,
             );
           }
 
-          return [...current, { ...product, quantity: 1 }];
+          return [...current, { ...product, quantity: addedQuantity }];
         });
+
+        if (addedQuantity > 0) {
+          toast.success({
+            title:
+              addedQuantity > 1
+                ? `${addedQuantity} ${product.name} added`
+                : `${product.name} added to cart`,
+            description: blockedByStock
+              ? "We added the remaining available stock."
+              : "Ready for checkout whenever you are.",
+            key: `add:${product.id}:${addedQuantity}:${blockedByStock}`,
+          });
+        } else if (blockedByStock) {
+          toast.warning({
+            title: `No more ${product.name} available`,
+            description: "You already have the available stock in your cart.",
+            key: `stock-limit:${product.id}`,
+          });
+        }
       },
       removeItem: (id) => {
-        setItems((current) => current.filter((item) => item.id !== id));
+        let removedName = "Item";
+
+        setItems((current) => {
+          const existing = current.find((item) => item.id === id);
+
+          if (existing) {
+            removedName = existing.name;
+          }
+
+          return current.filter((item) => item.id !== id);
+        });
+
+        toast.info({
+          title: `${removedName} removed`,
+          description: "Your cart has been updated.",
+          key: `remove:${id}`,
+        });
       },
       updateQuantity: (id, quantity) => {
+        let nextQuantity = quantity;
+        let itemName = "Item";
+        let removed = false;
+        let hitLimit = false;
+
         setItems((current) =>
           current
-            .map((item) => (item.id === id ? { ...item, quantity } : item))
+            .map((item) => {
+              if (item.id !== id) {
+                return item;
+              }
+
+              itemName = item.name;
+              const maxQuantity =
+                typeof item.inventoryCount === "number" ? Math.max(item.inventoryCount, 0) : null;
+              nextQuantity =
+                maxQuantity === null ? quantity : Math.min(Math.max(quantity, 0), maxQuantity);
+              removed = nextQuantity <= 0;
+              hitLimit = maxQuantity !== null && quantity > maxQuantity;
+
+              return {
+                ...item,
+                quantity: nextQuantity,
+              };
+            })
             .filter((item) => item.quantity > 0),
         );
+
+        if (removed) {
+          toast.info({
+            title: `${itemName} removed`,
+            description: "Your cart has been updated.",
+            key: `remove-via-quantity:${id}`,
+          });
+          return;
+        }
+
+        if (hitLimit) {
+          toast.warning({
+            title: `Only ${nextQuantity} ${itemName} available`,
+            description: "We adjusted the quantity to the available stock.",
+            key: `quantity-limit:${id}:${nextQuantity}`,
+          });
+          return;
+        }
+
+        toast.info({
+          title: `${itemName} quantity updated`,
+          description: `Now ${nextQuantity} in your cart.`,
+          key: `quantity-update:${id}:${nextQuantity}`,
+        });
       },
-      clearCart: () => {
+      clearCart: (options) => {
         setItems([]);
+
+        if (!options?.silent) {
+          toast.info({
+            title: "Cart cleared",
+            description: "You can always add your favorites back in.",
+            key: "clear-cart",
+          });
+        }
       },
     };
-  }, [items]);
+  }, [items, toast]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
